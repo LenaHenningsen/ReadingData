@@ -70,8 +70,8 @@ jobs:
           jing xml/schema/gexf.rng xml/rActs.gexf          
   release:
     runs-on: ubuntu-latest
-    needs: test
-    if: github.ref == 'refs/heads/master'
+    needs: build
+    if: github.ref == 'refs/heads/hotfix-ci'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -84,16 +84,28 @@ jobs:
         with:
           name: markup-xi
           path: xml
-      - name: Update Data
+      - name: Display structure of downloaded files
+        run: ls -R 
+      - name: CSV test 
+        run: textql -output-header -output-file views/view01a_txt-titles-test.csv -header -sql "select distinct a.act_id, a.act_object, ps.title from Act a, PrimarySource ps inner join PrimarySource on a.act_object = ps.prim_source_id  where ps.title_lang = a.id_lang and a.act_object!='W0414'" data/
+        working-directory: csv
+        continue-on-error: true 
+      - name: Create CSV Views
         run: |
-          textql -output-header -output-file csv/views/view01a_txt-titles.csv -header -sql "select distinct a.act_id, a.act_object, ps.title from Act a, PrimarySource ps inner join PrimarySource on a.act_object = ps.prim_source_id  where ps.title_lang = a.id_lang and a.act_object!='W0414'" csv/data/
-          textql -output-header -output-file csv/views/view01b_art-titles.csv -header -sql "select distinct a.act_id, a.act_object, aw.title from Act a, ArtWork aw inner join ArtWork on a.act_object = aw.artwork_id  where aw.title_lang = a.id_lang and a.act_object!='W0554'" csv/data/
-          textql -output-header -output-file csv/views/view02_creator-matrix.csv -header -sql "select distinct a.act_id, a.act_object, w.creator, (select distinct ps.title from PrimarySource ps where a.act_object = ps.prim_source_id) as title, (select distinct coalesce(p.family_name, '') || ' ' || coalesce(p.first_name, '') from Person p where w.creator = p.person_id) as name from Act a, Work w inner join Work on a.act_object = w.work_id where a.act_object!='W0414'" csv/data/
-          textql -output-header -output-file csv/views/view03a_reader-author-nodes.csv -header -sql "select distinct a.agent_id as node_id from Agent a" csv/data/
-          textql -output-header -output-file csv/views/view03b_reader-author-edges.csv -header -sql "select distinct a.act_id, a.agent as source, w.creator as target from Act a, Work w inner join Work on a.act_object = w.work_id" csv/data/
-          basex xml/modules/rAct-vega.xq > csv/views/view04a_rActs.json
-      - name: Commit and Push
-      # see https://stackoverflow.com/questions/57921401/push-to-origin-from-github-action/58393457#58393457
-        uses: actions-x/commit@v2
-        with:
-          message: "[skip ci] GitHub Actions Bot"
+          textql -output-header -output-file views/view01a_txt-titles.csv -header -sql "select distinct a.act_id, a.act_object, ps.title from Act a, PrimarySource ps inner join PrimarySource on a.act_object = ps.prim_source_id  where ps.title_lang = a.id_lang and a.act_object!='W0414'" data/
+          textql -output-header -output-file views/view01b_art-titles.csv -header -sql "select distinct a.act_id, a.act_object, aw.title from Act a, ArtWork aw inner join ArtWork on a.act_object = aw.artwork_id  where aw.title_lang = a.id_lang and a.act_object!='W0554'" data/
+          textql -output-header -output-file views/view02_creator-matrix.csv -header -sql "select distinct a.act_id, a.act_object, w.creator, (select distinct ps.title from PrimarySource ps where a.act_object = ps.prim_source_id) as title, (select distinct coalesce(p.family_name, '') || ' ' || coalesce(p.first_name, '') from Person p where w.creator = p.person_id) as name from Act a, Work w inner join Work on a.act_object = w.work_id where a.act_object!='W0414'" data/
+          textql -output-header -output-file views/view03a_reader-author-nodes.csv -header -sql "select distinct a.agent_id as node_id from Agent a" data/
+          textql -output-header -output-file views/view03b_reader-author-edges.csv -header -sql "select distinct a.act_id, a.agent as source, w.creator as target from Act a, Work w inner join Work on a.act_object = w.work_id" data/
+        working-directory: csv
+        continue-on-error: true 
+      - name: Create JSON Views
+        run: basex xml/modules/rAct-vega.xq > csv/views/view04a_rActs.json
+        # continue-on-error: true
+      - name: Display structure of downloaded files
+        run: ls -R    
+      # - name: Commit and Push
+      # # see https://stackoverflow.com/questions/57921401/push-to-origin-from-github-action/58393457#58393457
+      #   uses: actions-x/commit@v2
+      #   with:
+      #     message: "[skip ci] GitHub Actions Bot"
