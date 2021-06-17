@@ -86,8 +86,9 @@ jobs:
           path: xml
       - name: Display structure of downloaded files
         run: ls -R 
-      - name: CSV test 
-        run: textql -output-header -output-file views/view01a_txt-titles-test.csv -header -sql "select distinct a.act_id, a.act_object, ps.title from Act a, PrimarySource ps inner join PrimarySource on a.act_object = ps.prim_source_id  where ps.title_lang = a.id_lang and a.act_object!='W0414'" data/
+      - name: CSV test
+        run: textql --version 
+        # run: textql -output-header -output-file views/view01a_txt-titles-test.csv -header -sql "select distinct a.act_id, a.act_object, ps.title from Act a, PrimarySource ps inner join PrimarySource on a.act_object = ps.prim_source_id  where ps.title_lang = a.id_lang and a.act_object!='W0414'" data/
         working-directory: csv
         continue-on-error: true 
       - name: Create CSV Views
